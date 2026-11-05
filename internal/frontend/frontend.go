@@ -323,6 +323,18 @@ const HTMLTemplate = `<!DOCTYPE html>
             cart[index].duration_hours = parseFloat(val);
         }
 
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g,
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+
         function fetchCustomers() {
             fetch('/api/v1/customers')
                 .then(res => res.json())
@@ -331,7 +343,7 @@ const HTMLTemplate = `<!DOCTYPE html>
                     list.innerHTML = '';
                     if (data && data.length > 0) {
                         data.forEach(c => {
-                            list.innerHTML += '<div class="item-row"><div><strong>' + c.customer_id + '</strong><br>ID: ' + c.id_number + ' (' + c.id_type + ')</div></div>';
+                            list.innerHTML += '<div class="item-row"><div><strong>' + escapeHTML(c.customer_id) + '</strong><br>ID: ' + escapeHTML(c.id_number) + ' (' + escapeHTML(c.id_type) + ')</div></div>';
                         });
                     } else {
                         list.innerHTML = '<p>Keine verifizierten Kunden gefunden.</p>';
