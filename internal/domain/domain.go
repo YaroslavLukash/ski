@@ -3,13 +3,18 @@ package domain
 type ItemType string
 
 const (
-	ItemTypeSki  ItemType = "SKI"
-	ItemTypeBike ItemType = "BIKE"
+	ItemTypeSki     ItemType = "SKI"
+	ItemTypeBike    ItemType = "BIKE"
+	ItemTypeHelmet  ItemType = "HELMET"
+	ItemTypeBoots   ItemType = "BOOTS"
+	ItemTypeGoggles ItemType = "GOGGLES"
 )
 
 type RentalItem struct {
 	ID           string   `json:"id"`
 	Type         ItemType `json:"type"`
+	Description  string   `json:"description"`
+	IsPro        bool     `json:"is_pro"`
 	SerialNumber string   `json:"serial_number"`
 	IsRented     bool     `json:"is_rented"`
 	HourlyRate   float64  `json:"hourly_rate"`
@@ -25,6 +30,20 @@ type Bike struct {
 	RentalItem
 	FrameSize  string `json:"frame_size"`
 	IsElectric bool   `json:"is_electric"`
+}
+
+type Helmet struct {
+	RentalItem
+	Size string `json:"size"`
+}
+
+type Boots struct {
+	RentalItem
+	Size float64 `json:"size"`
+}
+
+type Goggles struct {
+	RentalItem
 }
 
 type Customer struct {
