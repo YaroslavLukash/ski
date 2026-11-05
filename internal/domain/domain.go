@@ -10,6 +10,8 @@ const (
 type RentalItem struct {
 	ID           string   `json:"id"`
 	Type         ItemType `json:"type"`
+	Description  string   `json:"description"`
+	IsPro        bool     `json:"is_pro"`
 	SerialNumber string   `json:"serial_number"`
 	IsRented     bool     `json:"is_rented"`
 	HourlyRate   float64  `json:"hourly_rate"`

@@ -40,7 +40,11 @@ func (p *SkiPlugin) GetType() domain.ItemType {
 
 func (p *SkiPlugin) CalculatePrice(item *domain.RentalItem, duration time.Duration) float64 {
 	hours := math.Ceil(duration.Hours())
-	return hours * item.HourlyRate * p.Multiplier
+	multiplier := 1.0
+	if item.IsPro {
+		multiplier = p.Multiplier
+	}
+	return hours * item.HourlyRate * multiplier
 }
 
 func (p *SkiPlugin) ValidateItem(item *domain.RentalItem) error {
@@ -60,7 +64,11 @@ func (p *BikePlugin) GetType() domain.ItemType {
 
 func (p *BikePlugin) CalculatePrice(item *domain.RentalItem, duration time.Duration) float64 {
 	hours := math.Ceil(duration.Hours())
-	return hours * item.HourlyRate * p.Multiplier
+	multiplier := 1.0
+	if item.IsPro {
+		multiplier = p.Multiplier
+	}
+	return hours * item.HourlyRate * multiplier
 }
 
 func (p *BikePlugin) ValidateItem(item *domain.RentalItem) error {

@@ -29,6 +29,29 @@ func (s *MemoryStore) AddItem(item *domain.RentalItem) error {
 	return nil
 }
 
+func (s *MemoryStore) MarkRented(itemIDs []string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Check if all exist and are not already rented
+	for _, id := range itemIDs {
+		item, exists := s.items[id]
+		if !exists {
+			return fmt.Errorf("item %s not found", id)
+		}
+		if item.IsRented {
+			return fmt.Errorf("item %s is already rented", id)
+		}
+	}
+
+	// Mark as rented
+	for _, id := range itemIDs {
+		s.items[id].IsRented = true
+	}
+
+	return nil
+}
+
 func (s *MemoryStore) GetItem(id string) (*domain.RentalItem, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
