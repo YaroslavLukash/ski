@@ -23,18 +23,18 @@ func NewHandler(store *store.MemoryStore, registry *plugin.Registry) *Handler {
 
 func (h *Handler) VerifyID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Methode nicht erlaubt", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var customer domain.Customer
 	if err := json.NewDecoder(r.Body).Decode(&customer); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Ungültige Anfrage", http.StatusBadRequest)
 		return
 	}
 
 	if customer.CustomerID == "" || customer.IDNumber == "" || customer.IDType == "" || customer.DocumentBase64 == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		http.Error(w, "Fehlende Pflichtfelder", http.StatusBadRequest)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (h *Handler) VerifyID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Customer ID verified and saved"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Kunden-ID erfolgreich verifiziert und gespeichert"})
 }
 
 func (h *Handler) Customers(w http.ResponseWriter, r *http.Request) {
@@ -82,18 +82,18 @@ type CheckoutRequest struct {
 
 func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Methode nicht erlaubt", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req CheckoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Ungültige Anfrage", http.StatusBadRequest)
 		return
 	}
 
 	if len(req.CartItems) == 0 {
-		http.Error(w, "Cart is empty", http.StatusBadRequest)
+		http.Error(w, "Warenkorb ist leer", http.StatusBadRequest)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 	for _, id := range itemIDs {
 		item, err := h.store.GetItem(id)
 		if err != nil || item.IsRented {
-			http.Error(w, "Item not available: "+id, http.StatusBadRequest)
+			http.Error(w, "Artikel nicht verfügbar: "+id, http.StatusBadRequest)
 			return
 		}
 		items = append(items, item)
@@ -121,7 +121,7 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 	for i, item := range items {
 		p, ok := h.registry.Get(item.Type)
 		if !ok {
-			http.Error(w, "Plugin not found for type", http.StatusInternalServerError)
+			http.Error(w, "Plugin nicht gefunden", http.StatusInternalServerError)
 			return
 		}
 
@@ -173,13 +173,13 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.MarkRented(itemIDs); err != nil {
-		http.Error(w, "Error marking items as rented: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Fehler beim Aktualisieren der Artikel: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":     "Checkout successful",
+		"message":     "Checkout erfolgreich",
 		"total_price": totalPrice,
 	})
 }
