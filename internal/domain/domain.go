@@ -18,6 +18,7 @@ type RentalItem struct {
 	SerialNumber string   `json:"serial_number"`
 	IsRented     bool     `json:"is_rented"`
 	HourlyRate   float64  `json:"hourly_rate"`
+	ImageSVG     string   `json:"image_svg"`
 }
 
 type Ski struct {

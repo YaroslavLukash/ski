@@ -68,7 +68,7 @@ const HTMLTemplate = `<!DOCTYPE html>
     <div class="container">
 
         <div class="promo-banner">
-            🔥 Use voucher code "HALF" to get 50% off any item! Verified users get an extra 10% off their entire cart! 🔥
+            🔥 Nutze den Gutscheincode "HALF" für 50% Rabatt auf jeden Artikel! Verifizierte Benutzer erhalten weitere 10% Rabatt auf den gesamten Warenkorb! 🔥
         </div>
 
         <div id="dashboard" class="content-section active">
@@ -76,45 +76,47 @@ const HTMLTemplate = `<!DOCTYPE html>
 
             <div class="metric-cards">
                 <div class="card">
-                    <h3>Total Items</h3>
+                    <h3>Gesamtartikel</h3>
                     <p id="stat-total">0</p>
                 </div>
                 <div class="card">
-                    <h3>Available</h3>
+                    <h3>Verfügbar</h3>
                     <p id="stat-available">0</p>
                 </div>
                 <div class="card">
-                    <h3>Rented</h3>
+                    <h3>Ausgeliehen</h3>
                     <p id="stat-rented">0</p>
                 </div>
                 <div class="card">
-                    <h3>Registered Users</h3>
+                    <h3>Registrierte Benutzer</h3>
                     <p id="stat-users">0</p>
                 </div>
             </div>
 
             <div class="actions">
-                <button onclick="openModal('modal-cart')">Shopping Cart (<span id="cart-count">0</span>)</button>
-                <button onclick="showSection('items')">Manage Items</button>
-                <button onclick="openModal('modal-verify-id')">Manage Persons (Verify ID)</button>
+                <button onclick="openModal('modal-cart')">Warenkorb (<span id="cart-count">0</span>)</button>
+                <button onclick="showSection('items')">Artikel verwalten</button>
+                <button onclick="openModal('modal-verify-id')">Personen verwalten (ID prüfen)</button>
             </div>
         </div>
 
         <div id="items" class="content-section">
-            <h2>Inventory Items</h2>
+            <h2>Lagerbestand</h2>
             <div class="item-list" id="dynamic-item-list">
                 <!-- Items will be injected here via JS -->
             </div>
         </div>
 
         <div id="customers" class="content-section">
-            <h2>Verified Customers</h2>
+            <h2>Verifizierte Kunden</h2>
             <div id="customer-list" class="item-list"></div>
         </div>
 
         <div id="rentals" class="content-section">
-            <h2>Active Rentals</h2>
-            <p>Active rentals would appear here.</p>
+            <h2>Aktive Ausleihen</h2>
+            <div class="item-list" id="rentals-list">
+                <!-- Rentals will be injected here via JS -->
+            </div>
         </div>
 
     </div>
@@ -122,45 +124,45 @@ const HTMLTemplate = `<!DOCTYPE html>
     <!-- Modals -->
     <div id="modal-verify-id" class="modal">
         <div class="modal-content">
-            <h2>Verify Customer ID</h2>
+            <h2>Kunden-ID überprüfen</h2>
             <div class="form-group">
-                <label>Customer ID</label>
+                <label>Kunden-ID</label>
                 <input type="text" id="vid-customer" value="cust_123">
             </div>
             <div class="form-group">
-                <label>ID Number</label>
+                <label>Ausweisnummer</label>
                 <input type="text" id="vid-number" value="AB123456">
             </div>
             <div class="form-group">
-                <label>ID Type</label>
+                <label>Ausweisart</label>
                 <select id="vid-type">
-                    <option value="PASSPORT">Passport</option>
-                    <option value="ID_CARD">ID Card</option>
+                    <option value="PASSPORT">Reisepass</option>
+                    <option value="ID_CARD">Personalausweis</option>
                 </select>
             </div>
             <!-- Dummy Base64 image for the payload -->
             <input type="hidden" id="vid-doc" value="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjEwIiB5PSI1MCI+SUQgRE9DPC90ZXh0Pjwvc3ZnPg==">
 
             <div class="modal-actions">
-                <button onclick="closeModal('modal-verify-id')" style="background:#ccc; color:#333;">Cancel</button>
-                <button onclick="submitVerifyID()">Verify</button>
+                <button onclick="closeModal('modal-verify-id')" style="background:#ccc; color:#333;">Abbrechen</button>
+                <button onclick="submitVerifyID()">Prüfen</button>
             </div>
         </div>
     </div>
 
     <div id="modal-cart" class="modal">
         <div class="modal-content">
-            <h2>Shopping Cart</h2>
+            <h2>Warenkorb</h2>
             <div id="cart-items-container" class="item-list" style="margin-bottom:1rem; max-height:200px; overflow-y:auto;"></div>
 
             <div class="form-group" style="margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
-                <label>Verified Customer ID (Optional for 10% off)</label>
-                <input type="text" id="cart-customer-id" placeholder="e.g. cust_123" style="border: 2px solid #4caf50;">
+                <label>Verifizierte Kunden-ID (Optional für 10% Rabatt)</label>
+                <input type="text" id="cart-customer-id" placeholder="z.B. cust_123" style="border: 2px solid #4caf50;">
             </div>
 
             <div class="modal-actions">
-                <button onclick="closeModal('modal-cart')" style="background:#ccc; color:#333;">Close</button>
-                <button onclick="submitCheckout()">Checkout</button>
+                <button onclick="closeModal('modal-cart')" style="background:#ccc; color:#333;">Schließen</button>
+                <button onclick="submitCheckout()">Kaufen</button>
             </div>
         </div>
     </div>
@@ -177,6 +179,8 @@ const HTMLTemplate = `<!DOCTYPE html>
                 fetchItems();
             } else if (id === 'customers') {
                 fetchCustomers();
+            } else if (id === 'rentals') {
+                fetchRentals();
             }
         }
 
@@ -208,34 +212,55 @@ const HTMLTemplate = `<!DOCTYPE html>
                     list.innerHTML = '';
                     data.forEach(item => {
                         const isPro = item.is_pro ? "(PRO) " : "";
-                        const svgSki = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#eee"/><path d="M 20 80 L 80 20" stroke="#333" stroke-width="5"/><text x="35" y="85" font-size="12">SKI</text></svg>';
-                        const svgBike = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#eee"/><circle cx="30" cy="70" r="15" stroke="#333" stroke-width="3" fill="none"/><circle cx="70" cy="70" r="15" stroke="#333" stroke-width="3" fill="none"/><path d="M 30 70 L 50 40 L 70 70 M 50 40 L 20 40" stroke="#333" stroke-width="3" fill="none"/><text x="30" y="25" font-size="12">BIKE</text></svg>';
-                        let icon = svgBike;
-                        if (item.type === 'SKI') icon = svgSki;
-                        else if (item.type === 'HELMET') icon = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#eee"/><path d="M 20 80 Q 50 20 80 80" fill="none" stroke="#333" stroke-width="5"/><text x="25" y="50" font-size="12">HELMET</text></svg>';
-                        else if (item.type === 'BOOTS') icon = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#eee"/><path d="M 40 20 L 40 80 L 80 80" fill="none" stroke="#333" stroke-width="5"/><text x="30" y="50" font-size="12">BOOTS</text></svg>';
-                        else if (item.type === 'GOGGLES') icon = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#eee"/><ellipse cx="50" cy="50" rx="30" ry="15" fill="none" stroke="#333" stroke-width="5"/><text x="20" y="30" font-size="12">GOGGLES</text></svg>';
+                        const icon = item.image_svg ? item.image_svg : '<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#eee"/></svg>';
 
-                        const status = item.is_rented ? 'Rented' : 'Available';
+                        const status = item.is_rented ? 'Ausgeliehen' : 'Verfügbar';
 
-                        let btn = item.is_rented ? '' : '<button onclick="addToCart(\'' + item.id + '\', \'' + item.description + '\')">Add to Cart</button>';
+                        let btn = item.is_rented ? '' : '<button onclick="addToCart(\'' + item.id + '\', \'' + item.description + '\')">In den Warenkorb</button>';
 
                         list.innerHTML += '<div class="item-row">' +
                             icon +
                             '<div style="flex-grow:1;">' +
                             '<strong>' + isPro + item.description + ' (ID: ' + item.id + ')</strong>' +
-                            '<br>' + status + ' | Base Rate: €' + item.hourly_rate.toFixed(2) + '/hr' +
+                            '<br>' + status + ' | Basispreis: €' + item.hourly_rate.toFixed(2) + '/h' +
                             '</div>' + btn + '</div>';
                     });
                 })
                 .catch(err => console.error('Error fetching items:', err));
         }
 
+        function fetchRentals() {
+            fetch('/api/v1/items')
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById('rentals-list');
+                    list.innerHTML = '';
+                    let hasRentals = false;
+                    data.forEach(item => {
+                        if (item.is_rented) {
+                            hasRentals = true;
+                            const isPro = item.is_pro ? "(PRO) " : "";
+                            const icon = item.image_svg ? item.image_svg : '<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#eee"/></svg>';
+                            list.innerHTML += '<div class="item-row">' +
+                                icon +
+                                '<div style="flex-grow:1;">' +
+                                '<strong>' + isPro + item.description + ' (ID: ' + item.id + ')</strong>' +
+                                '<br><span style="color:red; font-weight:bold;">Ausgeliehen</span>' +
+                                '</div></div>';
+                        }
+                    });
+                    if (!hasRentals) {
+                        list.innerHTML = '<p>Keine aktiven Ausleihen.</p>';
+                    }
+                })
+                .catch(err => console.error('Error fetching rentals:', err));
+        }
+
         function addToCart(id, name) {
             cart.push({ id: id, name: name, voucher: '', duration_hours: 24 });
             document.getElementById('cart-count').innerText = cart.length;
             renderCart();
-            alert(name + ' added to cart.');
+            alert(name + ' zum Warenkorb hinzugefügt.');
         }
 
         function renderCart() {
@@ -244,9 +269,9 @@ const HTMLTemplate = `<!DOCTYPE html>
             cart.forEach((cItem, index) => {
                 container.innerHTML += '<div style="margin-bottom:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; border-bottom:1px solid #eee; padding-bottom:0.5rem;">' +
                     '<div style="flex-basis:100%;"><strong>' + cItem.name + '</strong></div>' +
-                    '<input type="number" placeholder="Hours" style="width:70px; border:2px solid #2196f3;" onchange="updateDuration(' + index + ', this.value)" value="' + cItem.duration_hours + '" min="1">' +
-                    '<input type="text" placeholder="Voucher" style="width:100px; border:2px solid #ff9800;" onchange="updateVoucher(' + index + ', this.value)" value="' + cItem.voucher + '">' +
-                    '<button onclick="removeFromCart(' + index + ')" style="background:#f44336; margin-left:auto;">Remove</button>' +
+                    '<input type="number" placeholder="Stunden" style="width:70px; border:2px solid #2196f3;" onchange="updateDuration(' + index + ', this.value)" value="' + cItem.duration_hours + '" min="1">' +
+                    '<input type="text" placeholder="Gutschein" style="width:100px; border:2px solid #ff9800;" onchange="updateVoucher(' + index + ', this.value)" value="' + cItem.voucher + '">' +
+                    '<button onclick="removeFromCart(' + index + ')" style="background:#f44336; margin-left:auto;">Entfernen</button>' +
                     '</div>';
             });
         }
@@ -270,7 +295,7 @@ const HTMLTemplate = `<!DOCTYPE html>
                             list.innerHTML += '<div class="item-row"><div><strong>' + c.customer_id + '</strong><br>ID: ' + c.id_number + ' (' + c.id_type + ')</div></div>';
                         });
                     } else {
-                        list.innerHTML = '<p>No verified customers found.</p>';
+                        list.innerHTML = '<p>Keine verifizierten Kunden gefunden.</p>';
                     }
                 })
                 .catch(err => console.error('Error fetching customers:', err));
@@ -284,7 +309,7 @@ const HTMLTemplate = `<!DOCTYPE html>
 
         function submitCheckout() {
             if (cart.length === 0) {
-                alert('Cart is empty');
+                alert('Warenkorb ist leer');
                 return;
             }
 
@@ -302,13 +327,13 @@ const HTMLTemplate = `<!DOCTYPE html>
             .then(res => res.json().then(data => ({ status: res.status, body: data })))
             .then(res => {
                 if (res.status === 201) {
-                    alert('Checkout successful! Total Price: €' + res.body.total_price.toFixed(2));
+                    alert('Checkout erfolgreich! Gesamtpreis: €' + res.body.total_price.toFixed(2));
                     cart = [];
                     document.getElementById('cart-count').innerText = cart.length;
                     closeModal('modal-cart');
                     fetchStats();
                 } else {
-                    alert('Checkout failed: ' + res.body);
+                    alert('Fehler beim Checkout: ' + res.body);
                 }
             })
             .catch(err => console.error('Error during checkout:', err));
@@ -329,11 +354,11 @@ const HTMLTemplate = `<!DOCTYPE html>
             })
             .then(res => {
                 if (res.ok) {
-                    alert('Customer ID verified successfully!');
+                    alert('Kunden-ID erfolgreich verifiziert!');
                     closeModal('modal-verify-id');
                     fetchStats();
                 } else {
-                    alert('Verification failed.');
+                    alert('Verifizierung fehlgeschlagen.');
                 }
             })
             .catch(err => console.error('Error verifying ID:', err));
