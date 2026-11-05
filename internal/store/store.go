@@ -78,6 +78,38 @@ func (s *MemoryStore) GetCustomerCount() int {
 	return len(s.customers)
 }
 
+func (s *MemoryStore) GetAllCustomers() []*domain.Customer {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var allCustomers []*domain.Customer
+	for _, customer := range s.customers {
+		allCustomers = append(allCustomers, customer)
+	}
+	return allCustomers
+}
+
+func (s *MemoryStore) GetCustomer(id string) (*domain.Customer, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	customer, exists := s.customers[id]
+	if !exists {
+		return nil, fmt.Errorf("customer %s not found", id)
+	}
+	return customer, nil
+}
+
+func (s *MemoryStore) GetAvailableCountByType(itemType domain.ItemType) int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	count := 0
+	for _, item := range s.items {
+		if item.Type == itemType && !item.IsRented {
+			count++
+		}
+	}
+	return count
+}
+
 func (s *MemoryStore) AddCustomer(customer *domain.Customer) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -47,6 +47,17 @@ func (h *Handler) VerifyID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Customer ID verified and saved"})
 }
 
+func (h *Handler) Customers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	customers := h.store.GetAllCustomers()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(customers)
+}
+
 func (h *Handler) Items(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -59,13 +70,14 @@ func (h *Handler) Items(w http.ResponseWriter, r *http.Request) {
 }
 
 type CartItem struct {
-	ID      string `json:"id"`
-	Voucher string `json:"voucher"`
+	ID            string  `json:"id"`
+	Voucher       string  `json:"voucher"`
+	DurationHours float64 `json:"duration_hours"`
 }
 
 type CheckoutRequest struct {
-	DurationHours float64    `json:"duration_hours"`
-	CartItems     []CartItem `json:"cart_items"`
+	CustomerID string     `json:"customer_id"`
+	CartItems  []CartItem `json:"cart_items"`
 }
 
 func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +97,6 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration := time.Duration(req.DurationHours * float64(time.Hour))
 	var itemIDs []string
 	var prices []float64
 
@@ -105,6 +116,8 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 		items = append(items, item)
 	}
 
+	fullDayCount := 0
+
 	for i, item := range items {
 		p, ok := h.registry.Get(item.Type)
 		if !ok {
@@ -112,21 +125,30 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		cItem := req.CartItems[i]
+		if cItem.DurationHours >= 24.0 {
+			fullDayCount++
+		}
+
+		duration := time.Duration(cItem.DurationHours * float64(time.Hour))
 		price := p.CalculatePrice(item, duration)
 
+		// Scarcity Logic: if 2 or fewer available, multiply base price by 1.5
+		if h.store.GetAvailableCountByType(item.Type) <= 2 {
+			price *= 1.5
+		}
+
 		// Very simple voucher logic: if voucher == "HALF", cut price in half
-		if req.CartItems[i].Voucher == "HALF" {
+		if cItem.Voucher == "HALF" {
 			price = price / 2.0
 		}
 
 		prices = append(prices, price)
 	}
 
-	// Promotional Rental Rule (3 + 1 Free) for full day (>= 24 hours)
-	if req.DurationHours >= 24.0 && len(items) >= 4 {
-		// Find the cheapest item among the first 4 (or all) and zero it out
-		// To be precise: If a user rents 3 items, they can add a 4th for free.
-		// We'll zero out the cheapest item in the cart.
+	// Promotional Rental Rule (3 + 1 Free) for full day
+	// If at least 3 items have duration >= 24h, and total items >= 4, the cheapest item is free
+	if fullDayCount >= 3 && len(items) >= 4 {
 		minPriceIdx := 0
 		minPrice := prices[0]
 		for i, price := range prices {
@@ -141,6 +163,13 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 	totalPrice := 0.0
 	for _, price := range prices {
 		totalPrice += price
+	}
+
+	// Verified User 10% Discount
+	if req.CustomerID != "" {
+		if _, err := h.store.GetCustomer(req.CustomerID); err == nil {
+			totalPrice = totalPrice * 0.9
+		}
 	}
 
 	if err := h.store.MarkRented(itemIDs); err != nil {

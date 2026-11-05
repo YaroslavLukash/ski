@@ -3,8 +3,11 @@ package domain
 type ItemType string
 
 const (
-	ItemTypeSki  ItemType = "SKI"
-	ItemTypeBike ItemType = "BIKE"
+	ItemTypeSki     ItemType = "SKI"
+	ItemTypeBike    ItemType = "BIKE"
+	ItemTypeHelmet  ItemType = "HELMET"
+	ItemTypeBoots   ItemType = "BOOTS"
+	ItemTypeGoggles ItemType = "GOGGLES"
 )
 
 type RentalItem struct {
@@ -27,6 +30,20 @@ type Bike struct {
 	RentalItem
 	FrameSize  string `json:"frame_size"`
 	IsElectric bool   `json:"is_electric"`
+}
+
+type Helmet struct {
+	RentalItem
+	Size string `json:"size"`
+}
+
+type Boots struct {
+	RentalItem
+	Size float64 `json:"size"`
+}
+
+type Goggles struct {
+	RentalItem
 }
 
 type Customer struct {

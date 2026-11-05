@@ -54,6 +54,60 @@ func (p *SkiPlugin) ValidateItem(item *domain.RentalItem) error {
 	return nil
 }
 
+type HelmetPlugin struct{}
+
+func (p *HelmetPlugin) GetType() domain.ItemType {
+	return domain.ItemTypeHelmet
+}
+
+func (p *HelmetPlugin) CalculatePrice(item *domain.RentalItem, duration time.Duration) float64 {
+	hours := math.Ceil(duration.Hours())
+	return hours * item.HourlyRate
+}
+
+func (p *HelmetPlugin) ValidateItem(item *domain.RentalItem) error {
+	if item.Type != domain.ItemTypeHelmet {
+		return fmt.Errorf("invalid item type for helmet plugin")
+	}
+	return nil
+}
+
+type BootsPlugin struct{}
+
+func (p *BootsPlugin) GetType() domain.ItemType {
+	return domain.ItemTypeBoots
+}
+
+func (p *BootsPlugin) CalculatePrice(item *domain.RentalItem, duration time.Duration) float64 {
+	hours := math.Ceil(duration.Hours())
+	return hours * item.HourlyRate
+}
+
+func (p *BootsPlugin) ValidateItem(item *domain.RentalItem) error {
+	if item.Type != domain.ItemTypeBoots {
+		return fmt.Errorf("invalid item type for boots plugin")
+	}
+	return nil
+}
+
+type GogglesPlugin struct{}
+
+func (p *GogglesPlugin) GetType() domain.ItemType {
+	return domain.ItemTypeGoggles
+}
+
+func (p *GogglesPlugin) CalculatePrice(item *domain.RentalItem, duration time.Duration) float64 {
+	hours := math.Ceil(duration.Hours())
+	return hours * item.HourlyRate
+}
+
+func (p *GogglesPlugin) ValidateItem(item *domain.RentalItem) error {
+	if item.Type != domain.ItemTypeGoggles {
+		return fmt.Errorf("invalid item type for goggles plugin")
+	}
+	return nil
+}
+
 type BikePlugin struct {
 	Multiplier float64
 }
