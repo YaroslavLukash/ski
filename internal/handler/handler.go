@@ -138,6 +138,11 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 			price *= 1.5
 		}
 
+		// Daily discount: If taken for >= 24 hours, make it 20% cheaper
+		if cItem.DurationHours >= 24.0 {
+			price = price * 0.8
+		}
+
 		// Very simple voucher logic: if voucher == "HALF", cut price in half
 		if cItem.Voucher == "HALF" {
 			price = price / 2.0

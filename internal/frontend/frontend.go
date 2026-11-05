@@ -48,7 +48,8 @@ const HTMLTemplate = `<!DOCTYPE html>
         /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal.active { display: flex; }
-        .modal-content { background: white; padding: 2rem; border-radius: 8px; width: 100%; max-width: 400px; }
+        .modal-content { background: white; padding: 2rem; border-radius: 8px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .modal-content.large { max-width: 600px; }
         .modal-content h2 { margin-top: 0; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; }
@@ -151,13 +152,17 @@ const HTMLTemplate = `<!DOCTYPE html>
     </div>
 
     <div id="modal-cart" class="modal">
-        <div class="modal-content">
+        <div class="modal-content large">
             <h2>Warenkorb</h2>
-            <div id="cart-items-container" class="item-list" style="margin-bottom:1rem; max-height:200px; overflow-y:auto;"></div>
+            <div id="cart-items-container" class="item-list" style="margin-bottom:1rem; max-height:300px; overflow-y:auto;"></div>
 
             <div class="form-group" style="margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
                 <label>Verifizierte Kunden-ID (Optional für 10% Rabatt)</label>
                 <input type="text" id="cart-customer-id" placeholder="z.B. cust_123" style="border: 2px solid #4caf50;">
+            </div>
+
+            <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; font-size: 0.85rem; color: #0d47a1; margin-top: 1rem;">
+                <strong>Rückgaberichtlinien:</strong> Bitte bringen Sie alle Artikel am Ende der Mietdauer sauber und unbeschädigt zurück. Bei verspäteter Rückgabe können zusätzliche Gebühren anfallen. Es gelten unsere AGB.
             </div>
 
             <div class="modal-actions">
@@ -204,29 +209,63 @@ const HTMLTemplate = `<!DOCTYPE html>
                 .catch(err => console.error('Error fetching stats:', err));
         }
 
+        let globalItems = [];
+
         function fetchItems() {
             fetch('/api/v1/items')
                 .then(res => res.json())
                 .then(data => {
+                    globalItems = data;
                     const list = document.getElementById('dynamic-item-list');
                     list.innerHTML = '';
+
+                    const grouped = {};
                     data.forEach(item => {
-                        const isPro = item.is_pro ? "(PRO) " : "";
-                        const icon = item.image_svg ? item.image_svg : '<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#eee"/></svg>';
+                        if (item.is_rented) return; // Only group available
+                        const key = item.description + '_' + item.is_pro;
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                description: item.description,
+                                is_pro: item.is_pro,
+                                hourly_rate: item.hourly_rate,
+                                image_svg: item.image_svg,
+                                ids: []
+                            };
+                        }
+                        grouped[key].ids.push(item.id);
+                    });
 
-                        const status = item.is_rented ? 'Ausgeliehen' : 'Verfügbar';
+                    for (const key in grouped) {
+                        const group = grouped[key];
+                        const isPro = group.is_pro ? "(PRO) " : "";
+                        const icon = group.image_svg ? group.image_svg : '<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#eee"/></svg>';
 
-                        let btn = item.is_rented ? '' : '<button onclick="addToCart(\'' + item.id + '\', \'' + item.description + '\')">In den Warenkorb</button>';
+                        // Check if any of these IDs are already in cart
+                        let availableIds = group.ids.filter(id => !cart.find(c => c.id === id));
+                        let count = availableIds.length;
+
+                        let btn = count > 0 ? '<button onclick="addToCartGroup(\'' + key + '\')">In den Warenkorb</button>' : '<span style="color:red;font-weight:bold;">Ausverkauft</span>';
 
                         list.innerHTML += '<div class="item-row">' +
                             icon +
                             '<div style="flex-grow:1;">' +
-                            '<strong>' + isPro + item.description + ' (ID: ' + item.id + ')</strong>' +
-                            '<br>' + status + ' | Basispreis: €' + item.hourly_rate.toFixed(2) + '/h' +
+                            '<strong>' + isPro + group.description + '</strong>' +
+                            '<br><span style="color:#4caf50; font-weight:bold;">Verfügbar: ' + count + '</span> | Basispreis: €' + group.hourly_rate.toFixed(2) + '/h' +
                             '</div>' + btn + '</div>';
-                    });
+                    }
                 })
                 .catch(err => console.error('Error fetching items:', err));
+        }
+
+        function addToCartGroup(key) {
+            // Find grouped info
+            const groupItem = globalItems.find(i => (i.description + '_' + i.is_pro) === key && !i.is_rented && !cart.find(c => c.id === i.id));
+            if (groupItem) {
+                addToCart(groupItem.id, (groupItem.is_pro ? "(PRO) " : "") + groupItem.description);
+                fetchItems(); // refresh counts
+            } else {
+                alert('Nicht mehr verfügbar.');
+            }
         }
 
         function fetchRentals() {
@@ -269,7 +308,7 @@ const HTMLTemplate = `<!DOCTYPE html>
             cart.forEach((cItem, index) => {
                 container.innerHTML += '<div style="margin-bottom:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; border-bottom:1px solid #eee; padding-bottom:0.5rem;">' +
                     '<div style="flex-basis:100%;"><strong>' + cItem.name + '</strong></div>' +
-                    '<input type="number" placeholder="Stunden" style="width:70px; border:2px solid #2196f3;" onchange="updateDuration(' + index + ', this.value)" value="' + cItem.duration_hours + '" min="1">' +
+                    '<div style="display:flex; align-items:center; gap: 0.3rem;"><input type="number" placeholder="Stunden" style="width:60px; border:2px solid #2196f3;" onchange="updateDuration(' + index + ', this.value)" value="' + cItem.duration_hours + '" min="1"> <span>Std.</span></div>' +
                     '<input type="text" placeholder="Gutschein" style="width:100px; border:2px solid #ff9800;" onchange="updateVoucher(' + index + ', this.value)" value="' + cItem.voucher + '">' +
                     '<button onclick="removeFromCart(' + index + ')" style="background:#f44336; margin-left:auto;">Entfernen</button>' +
                     '</div>';
@@ -305,6 +344,9 @@ const HTMLTemplate = `<!DOCTYPE html>
             cart.splice(index, 1);
             document.getElementById('cart-count').innerText = cart.length;
             renderCart();
+            if (document.getElementById('items').classList.contains('active')) {
+                fetchItems();
+            }
         }
 
         function submitCheckout() {
